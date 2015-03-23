@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import io
 import os
 import re
@@ -10,6 +11,7 @@ import ipaddress
 import hmac
 from hashlib import sha1
 from flask import Flask, request, abort
+from flup.server.fcgi import WSGIServer
 
 """
 Conditionally import ProxyFix from werkzeug if the USE_PROXYFIX environment
@@ -23,16 +25,15 @@ module.
     import flask-github-webhook-handler.index as handler
 
 """
+
+module_home = os.path.dirname(os.path.abspath(__file__))
+json_config = os.path.join(module_home, "repos.json")
+
 if os.environ.get('USE_PROXYFIX', None) == 'true':
     from werkzeug.contrib.fixers import ProxyFix
 
 app = Flask(__name__)
 app.debug = os.environ.get('DEBUG') == 'true'
-
-# The repos.json file should be readable by the user running the Flask app,
-# and the absolute path should be given by this environment variable.
-REPOS_JSON_PATH = os.environ['FLASK_GITHUB_WEBHOOK_REPOS_JSON']
-
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
@@ -47,8 +48,7 @@ def index():
             hook_blocks = [os.environ.get('GHE_ADDRESS')]
         # Otherwise get the hook address blocks from the API.
         else:
-            hook_blocks = requests.get('https://api.github.com/meta').json()[
-                'hooks']
+            hook_blocks = requests.get('https://api.github.com/meta').json()['hooks']
 
         # Check if the POST request is from github.com or GHE
         for block in hook_blocks:
@@ -62,7 +62,7 @@ def index():
         if request.headers.get('X-GitHub-Event') != "push":
             return json.dumps({'msg': "wrong event type"})
 
-        repos = json.loads(io.open(REPOS_JSON_PATH, 'r').read())
+        repos = json.loads(io.open(json_config, 'r').read())
 
         payload = json.loads(request.data)
         repo_meta = {
@@ -130,4 +130,5 @@ if __name__ == "__main__":
         port_number = 80
     if os.environ.get('USE_PROXYFIX', None) == 'true':
         app.wsgi_app = ProxyFix(app.wsgi_app)
-    app.run(host='0.0.0.0', port=port_number)
+    WSGIServer(app).run()
+    #app.run(host='0.0.0.0', port=port_number)
