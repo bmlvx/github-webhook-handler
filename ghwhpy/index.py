@@ -29,8 +29,8 @@ module.
 module_home = os.path.dirname(os.path.abspath(__file__))
 json_config = os.path.join(module_home, "repos.json")
 
-if os.environ.get('FLASK_GITHUB_WEBHOOK_REPOS_JSON', None):
-    json_config = os.environ['FLASK_GITHUB_WEBHOOK_REPOS_JSON']
+if os.environ.get('GITHUB_WEBHOOK_REPOS_JSON', None):
+    json_config = os.environ['GITHUB_WEBHOOK_REPOS_JSON']
 
 if os.environ.get('USE_PROXYFIX', None) == 'true':
     from werkzeug.contrib.fixers import ProxyFix
