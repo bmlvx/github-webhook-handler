@@ -59,12 +59,12 @@ def index():
                 break  # the remote_addr is within the network range of github.
         else:
             abort(403)
-
+        print request.headers
         if request.headers.get('X-GitHub-Event') == "ping":
             return json.dumps({'msg': 'Hi!'})
         if request.headers.get('X-GitHub-Event') != "push":
             return json.dumps({'msg': "wrong event type"})
-
+        print json_config
         repos = json.loads(io.open(json_config, 'r').read())
 
         payload = json.loads(request.data)
